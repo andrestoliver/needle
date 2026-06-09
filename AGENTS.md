@@ -80,7 +80,7 @@ genéricos apenas para imitar um diagrama.
 A estrutura padrão é:
 
 ```text
-Needle.slnx
+Needle.sln
 src/
   Needle.Api/
     Needle.Api.csproj

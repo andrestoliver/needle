@@ -1,0 +1,6 @@
+@Needle.Api_HostAddress = http://localhost:5195
+
+GET {{Needle.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

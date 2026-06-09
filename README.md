@@ -78,7 +78,7 @@ aplicação.
 Estrutura inicial planejada:
 
 ```text
-Needle.slnx
+Needle.sln
 src/
   Needle.Api/
   Needle.Application/
