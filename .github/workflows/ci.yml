@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore dependencies
+        run: dotnet restore Needle.sln
+
+      - name: Build
+        run: dotnet build Needle.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Needle.sln --configuration Release --no-build
