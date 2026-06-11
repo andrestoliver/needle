@@ -67,6 +67,13 @@ public class CreateAlbumHandlerTests
             ReceivedCancellationToken = cancellationToken;
             return Task.CompletedTask;
         }
+        
+        public Task<Album?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
     }
     
     [Fact]

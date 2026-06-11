@@ -42,6 +42,10 @@ public sealed class CreateAlbumEndpointTests
             Assert.Equal(request.title, createdAlbum.Title);
             Assert.Equal(request.artistName, createdAlbum.ArtistName);
             Assert.Equal(request.releaseYear, createdAlbum.ReleaseYear);
+            Assert.NotNull(response.Headers.Location);
+            Assert.Equal(
+                $"/api/albums/{createdAlbum.Id}",
+                response.Headers.Location.AbsolutePath);
         }
         finally
         {

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Needle.Application.Albums;
 using Needle.Domain.Albums;
 
@@ -21,5 +22,16 @@ public sealed class AlbumRepository : IAlbumRepository
         
         await _dbContext.Albums.AddAsync(album, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<Album?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _dbContext.Albums
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                album => album.Id == id,
+                cancellationToken);
     }
 }
