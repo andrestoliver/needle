@@ -1,6 +1,6 @@
 using Needle.Domain.Albums;
 
-namespace Needle.UnitTests.Albums;
+namespace Needle.UnitTests.Domain.Albums;
 
 public class AlbumTests
 {
