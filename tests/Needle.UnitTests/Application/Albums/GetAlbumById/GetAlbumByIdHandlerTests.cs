@@ -10,7 +10,7 @@ public class GetAlbumByIdHandlerTests
     public async Task HandleAsync_WithValidId_ReturnsAlbum()
     {
         //Arrange
-        var album = new Album(
+        var album = Album.CreateManual(
             Guid.NewGuid(),
             "Kind of Blue",
             "Miles Davis",

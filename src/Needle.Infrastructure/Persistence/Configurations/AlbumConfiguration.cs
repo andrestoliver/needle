@@ -28,5 +28,13 @@ public sealed class AlbumConfiguration : IEntityTypeConfiguration<Album>
         builder.Property(album => album.ReleaseYear)
             .HasColumnName("release_year")
             .IsRequired();
+        
+        builder.Property(album => album.ExternalId)
+            .HasColumnName("external_id")
+            .HasMaxLength(36)
+            .IsRequired(false);
+
+        builder.HasIndex(album => album.ExternalId)
+            .IsUnique();
     }
 }
