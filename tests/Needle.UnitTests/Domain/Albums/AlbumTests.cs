@@ -11,7 +11,7 @@ public class AlbumTests
         var id = Guid.NewGuid();
 
         // Act
-        var album = new Album(
+        var album = Album.CreateManual(
             id,
             "Kind of Blue",
             "Miles Davis",
@@ -31,7 +31,7 @@ public class AlbumTests
         var id = Guid.Empty;
 
         //Act
-        Action act = () => new Album(id, "Kind of Blue", "Miles Davis", 1959);
+        Action act = () => Album.CreateManual(id, "Kind of Blue", "Miles Davis", 1959);
 
         //Assert
         var exception = Assert.Throws<ArgumentException>(act);
@@ -45,7 +45,7 @@ public class AlbumTests
         var title = "  Kind of Blue  ";
 
         //Act
-        var album = new Album(Guid.NewGuid(), title, "Miles Davis", 1959);
+        var album = Album.CreateManual(Guid.NewGuid(), title, "Miles Davis", 1959);
 
         //Assert
         Assert.Equal("Kind of Blue", album.Title);
@@ -57,7 +57,7 @@ public class AlbumTests
     public void Title_ShouldRejectEmptyOrWhiteSpace(string title)
     {
         //Act
-        Action act = () => new Album(Guid.NewGuid(), title, "Miles Davis", 1959);
+        Action act = () => Album.CreateManual(Guid.NewGuid(), title, "Miles Davis", 1959);
 
         //Assert
         var exception = Assert.Throws<ArgumentException>(act);
@@ -71,7 +71,7 @@ public class AlbumTests
         string title = null!;
 
         //Act
-        Action act = () => new Album(Guid.NewGuid(), title, "Miles Davis", 1959);
+        Action act = () => Album.CreateManual(Guid.NewGuid(), title, "Miles Davis", 1959);
 
         //Assert
         var exception = Assert.Throws<ArgumentException>(act);
@@ -85,7 +85,7 @@ public class AlbumTests
         var artistName = "  Miles Davis  ";
 
         //Act
-        var album = new Album(Guid.NewGuid(), "Kind of Blue", artistName, 1959);
+        var album = Album.CreateManual(Guid.NewGuid(), "Kind of Blue", artistName, 1959);
 
         //Assert
         Assert.Equal("Miles Davis", album.ArtistName);
@@ -97,7 +97,7 @@ public class AlbumTests
     public void ArtistName_ShouldRejectEmptyOrWhiteSpace(string artistName)
     {
         //Act
-        Action act = () => new Album(Guid.NewGuid(), "Kind of Blue", artistName, 1959);
+        Action act = () => Album.CreateManual(Guid.NewGuid(), "Kind of Blue", artistName, 1959);
 
         //Assert
         var exception = Assert.Throws<ArgumentException>(act);
@@ -111,7 +111,7 @@ public class AlbumTests
         string artistName = null!;
 
         //Act
-        Action act = () => new Album(Guid.NewGuid(), "Kind of Blue", artistName, 1959);
+        Action act = () => Album.CreateManual(Guid.NewGuid(), "Kind of Blue", artistName, 1959);
 
         //Assert
         var exception = Assert.Throws<ArgumentException>(act);
@@ -125,7 +125,7 @@ public class AlbumTests
         var releaseYear = 1876;
 
         //Act
-        Action act = () => new Album(Guid.NewGuid(), "Kind of Blue", "Miles Davis", releaseYear);
+        Action act = () => Album.CreateManual(Guid.NewGuid(), "Kind of Blue", "Miles Davis", releaseYear);
 
         //Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(act);
@@ -139,7 +139,7 @@ public class AlbumTests
         const int releaseYear = 1877;
 
         // Act
-        var album = new Album(
+        var album = Album.CreateManual(
             Guid.NewGuid(),
             "Kind of Blue",
             "Miles Davis",
@@ -147,5 +147,86 @@ public class AlbumTests
 
         // Assert
         Assert.Equal(releaseYear, album.ReleaseYear);
+    }
+
+    [Fact]
+    public void CreateManual_ShouldCreateAlbumWithoutExternalId()
+    {
+        //Act 
+        var album = Album.CreateManual(Guid.NewGuid(), "Kind of Blue", "Miles Davis", 1959);
+        
+        //Assert
+        Assert.Null(album.ExternalId);
+    }
+
+    [Fact]
+    public void ImportFromMusicBrainz_ShouldCreateAlbumWithTrimmedExternalId()
+    {
+        //Arrange
+        const string externalId =
+            "  1b022e01-4da6-387b-8658-8678046e4cef  ";
+        
+        //Act
+        var album = Album.ImportFromMusicBrainz(
+            Guid.NewGuid(), 
+            externalId, 
+            "Kind of Blue", 
+            "Miles Davis", 
+            1959);
+        
+        //Assert
+        Assert.Equal("1b022e01-4da6-387b-8658-8678046e4cef", album.ExternalId);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ImportFromMusicBrainz_WithInvalidExternalId_ShouldThrow(
+        string externalId)
+    {
+        //Act
+        void Act() => Album.ImportFromMusicBrainz(
+            Guid.NewGuid(), 
+            externalId, 
+            "Kind of Blue", 
+            "Miles Davis", 
+            1959);
+
+        //Assert
+        var exception = Assert.Throws<ArgumentException>(Act);
+        Assert.Equal("externalId", exception.ParamName);
+    }
+    
+    [Fact]
+    public void ImportFromMusicBrainz_WithNullExternalId_ShouldThrow()
+    {
+        //Arrange
+        string? externalId = null!;
+        
+        //Act
+        void Act() => Album.ImportFromMusicBrainz(
+            Guid.NewGuid(), 
+            externalId, 
+            "Kind of Blue", 
+            "Miles Davis", 
+            1959);
+
+        //Assert
+        var exception = Assert.Throws<ArgumentNullException>(Act);
+        Assert.Equal("externalId", exception.ParamName);
+    }
+    
+    [Fact]
+    public void ImportFromMusicBrainz_WithInvalidExternalIdFormat_ShouldThrow()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => Album.ImportFromMusicBrainz(
+                Guid.NewGuid(),
+                "invalid-id",
+                "Kind of Blue",
+                "Miles Davis",
+                1959));
+
+        Assert.Equal("externalId", exception.ParamName);
     }
 }

@@ -18,7 +18,7 @@ public sealed class GetAlbumByIdEndpointTests
 
         await ApplyMigrationsAsync(factory.Services);
 
-        var album = new Album(
+        var album = Album.CreateManual(
             Guid.NewGuid(),
             "A Love Supreme",
             "John Coltrane",

@@ -18,10 +18,10 @@ public sealed class CreateAlbumHandler
     {
         ArgumentNullException.ThrowIfNull(command);
         
-        var album = new Album(
-            Guid.NewGuid(),
-            command.Title,
-            command.ArtistName,
+        var album = Album.CreateManual(
+            Guid.NewGuid(), 
+            command.Title, 
+            command.ArtistName, 
             command.ReleaseYear);
         
         await _albumRepository.AddAsync(album, cancellationToken);
