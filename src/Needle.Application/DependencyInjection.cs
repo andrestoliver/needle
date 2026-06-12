@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Needle.Application.Albums.CreateAlbum;
 using Needle.Application.Albums.GetAlbumById;
+using Needle.Application.Albums.SearchExternalAlbums;
 
 namespace Needle.Application;
 
@@ -11,6 +12,7 @@ public static class DependencyInjection
     {
         services.AddScoped<CreateAlbumHandler>();
         services.AddScoped<GetAlbumByIdHandler>();
+        services.AddScoped<SearchExternalAlbumsHandler>();
 
         return services;
     }
