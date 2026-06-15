@@ -34,4 +34,15 @@ public sealed class AlbumRepository : IAlbumRepository
                 album => album.Id == id,
                 cancellationToken);
     }
+    
+    public async Task<Album?> GetByExternalIdAsync(
+        string externalId,
+        CancellationToken cancellationToken)
+    {
+        return await _dbContext.Albums
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                album => album.ExternalId == externalId,
+                cancellationToken);
+    }
 }

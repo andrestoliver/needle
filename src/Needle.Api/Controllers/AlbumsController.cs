@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Needle.Api.Contracts.Albums;
 using Needle.Application.Albums.CreateAlbum;
 using Needle.Application.Albums.GetAlbumById;
+using Needle.Application.Albums.ImportAlbum;
 
 namespace Needle.Api.Controllers;
 
@@ -11,16 +12,20 @@ public class AlbumsController : ControllerBase
 {
     private readonly CreateAlbumHandler _createAlbumHandler;
     private readonly GetAlbumByIdHandler _getAlbumByIdHandler;
+    private readonly ImportAlbumHandler _importAlbumHandler;
 
     public AlbumsController(
         CreateAlbumHandler createAlbumHandler,
-        GetAlbumByIdHandler getAlbumByIdHandler)
+        GetAlbumByIdHandler getAlbumByIdHandler,
+        ImportAlbumHandler importAlbumHandler)
     {
         ArgumentNullException.ThrowIfNull(createAlbumHandler);
         ArgumentNullException.ThrowIfNull(getAlbumByIdHandler);
+        ArgumentNullException.ThrowIfNull(importAlbumHandler);
         
         _createAlbumHandler = createAlbumHandler;
         _getAlbumByIdHandler = getAlbumByIdHandler;
+        _importAlbumHandler = importAlbumHandler;
     }
     
     [HttpPost]
@@ -70,5 +75,52 @@ public class AlbumsController : ControllerBase
             album.ReleaseYear);
 
         return Ok(response);
+    }
+
+    [HttpPost("import")]
+    public async Task<IActionResult> Import(
+        ImportAlbumRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new ImportAlbumCommand(request.ExternalId);
+
+        var result = await _importAlbumHandler.HandleAsync(
+            command,
+            cancellationToken);
+
+        if (result.Album is not null)
+        {
+            var response = new ImportAlbumResponse(
+                result.Album.Id,
+                result.Album.ExternalId!,
+                result.Album.Title,
+                result.Album.ArtistName,
+                result.Album.ReleaseYear);
+
+            return result.Status switch
+            {
+                ImportAlbumStatus.Imported => CreatedAtAction(
+                    nameof(GetById),
+                    new { id = response.Id },
+                    response),
+
+                ImportAlbumStatus.AlreadyImported => Ok(response),
+
+                _ => throw new InvalidOperationException(
+                    "Unexpected import status with an album.")
+            };
+        }
+
+        return result.Status switch
+        {
+            ImportAlbumStatus.ExternalAlbumNotFound => NotFound(
+                new { message = "Album was not found in MusicBrainz." }),
+
+            ImportAlbumStatus.MissingReleaseYear => UnprocessableEntity(
+                new { message = "Album does not have a release year." }),
+
+            _ => throw new InvalidOperationException(
+                "Unexpected import status without an album.")
+        };
     }
 }

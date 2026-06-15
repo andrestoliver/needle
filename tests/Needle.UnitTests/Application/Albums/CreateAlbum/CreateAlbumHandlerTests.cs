@@ -1,5 +1,6 @@
 using Needle.Application.Albums;
 using Needle.Application.Albums.CreateAlbum;
+using Needle.Application.Albums.SearchExternalAlbums;
 using Needle.Domain.Albums;
 
 namespace Needle.UnitTests.Application.Albums.CreateAlbum;
@@ -71,6 +72,11 @@ public class CreateAlbumHandlerTests
         public Task<Album?> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<Album?> GetByExternalIdAsync(string externalId, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
