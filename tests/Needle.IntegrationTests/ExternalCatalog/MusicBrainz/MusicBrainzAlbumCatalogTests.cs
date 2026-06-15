@@ -109,9 +109,44 @@ public sealed class MusicBrainzAlbumCatalogTests
         Assert.Contains("limit=7", requestUri);
         Assert.Contains("fmt=json", requestUri);
     }
+    
+    [Fact]
+    public async Task GetByIdAsync_WhenAlbumExists_ShouldMapAlbum()
+    {
+        const string json = """
+                            {
+                              "id": "1b022e01-4da6-387b-8658-8678046e4cef",
+                              "title": "Kind of Blue",
+                              "first-release-date": "1959-08-17",
+                              "primary-type": "Album",
+                              "artist-credit": [
+                                { "name": "Miles Davis" }
+                              ]
+                            }
+                            """;
+
+        var handler = new StubHttpMessageHandler(json);
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://musicbrainz.org")
+        };
+
+        var catalog = new MusicBrainzAlbumCatalog(client);
+
+        var result = await catalog.GetByIdAsync(
+            "1b022e01-4da6-387b-8658-8678046e4cef",
+            CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal("Kind of Blue", result.Title);
+        Assert.Equal("Miles Davis", result.ArtistName);
+        Assert.Equal(1959, result.FirstReleaseYear);
+    }
 
     private sealed class StubHttpMessageHandler(
-        string responseContent) : HttpMessageHandler
+        string responseContent,
+        HttpStatusCode statusCode = HttpStatusCode.OK)
+        : HttpMessageHandler
     {
         public Uri? ReceivedRequestUri { get; private set; }
 
@@ -121,7 +156,7 @@ public sealed class MusicBrainzAlbumCatalogTests
         {
             ReceivedRequestUri = request.RequestUri;
 
-            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            var response = new HttpResponseMessage(statusCode)
             {
                 Content = new StringContent(
                     responseContent,

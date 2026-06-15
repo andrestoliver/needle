@@ -141,5 +141,12 @@ public sealed class SearchExternalAlbumsHandlerTests
 
             return Task.FromResult(results);
         }
+
+        public Task<ExternalAlbumSearchResult?> GetByIdAsync(
+            string externalId, 
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
     }
 }

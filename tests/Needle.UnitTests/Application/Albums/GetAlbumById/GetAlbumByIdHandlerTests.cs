@@ -107,6 +107,11 @@ public class GetAlbumByIdHandlerTests
             return Task.FromResult(_album);
         }
 
+        public Task<Album?> GetByExternalIdAsync(string externalId, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
         public Task AddAsync(
             Album album,
             CancellationToken cancellationToken)

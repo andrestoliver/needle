@@ -6,4 +6,7 @@ public interface IExternalAlbumCatalog
         string query,
         int limit,
         CancellationToken cancellationToken);
+    Task<ExternalAlbumSearchResult?> GetByIdAsync(
+        string externalId,
+        CancellationToken cancellationToken);
 }
