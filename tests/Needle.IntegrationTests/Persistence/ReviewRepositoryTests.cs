@@ -29,7 +29,7 @@ public sealed class ReviewRepositoryTests
             Guid.NewGuid(),
             new Rating(4.5m),
             "great album",
-            DateTimeOffset.UtcNow);
+            CreateUtcNow());
 
         try
         {
@@ -74,7 +74,7 @@ public sealed class ReviewRepositoryTests
             userId,
             new Rating(5.0m),
             "masterpiece",
-            DateTimeOffset.UtcNow);
+            CreateUtcNow());
 
         try
         {
@@ -147,7 +147,7 @@ public sealed class ReviewRepositoryTests
             userId,
             new Rating(4.0m),
             "first review",
-            DateTimeOffset.UtcNow);
+            CreateUtcNow());
 
         var duplicatedReview = Review.Create(
             Guid.NewGuid(),
@@ -155,7 +155,7 @@ public sealed class ReviewRepositoryTests
             userId,
             new Rating(5.0m),
             "duplicated review",
-            DateTimeOffset.UtcNow);
+            CreateUtcNow());
 
         try
         {
@@ -215,5 +215,19 @@ public sealed class ReviewRepositoryTests
         await dbContext.Albums
             .Where(album => album.Id == albumId)
             .ExecuteDeleteAsync();
+    }
+    
+    private static DateTimeOffset CreateUtcNow()
+    {
+        var utcNow = DateTimeOffset.UtcNow;
+
+        return new DateTimeOffset(
+            utcNow.Year,
+            utcNow.Month,
+            utcNow.Day,
+            utcNow.Hour,
+            utcNow.Minute,
+            utcNow.Second,
+            TimeSpan.Zero);
     }
 }
