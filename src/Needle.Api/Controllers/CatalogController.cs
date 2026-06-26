@@ -17,7 +17,11 @@ public class CatalogController : ControllerBase
         _handler = handler;
     }
     
+    /// <summary>
+    /// Searches albums in the external MusicBrainz catalog without persisting them locally.
+    /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(ExternalAlbumSearchResult[]), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search(
         [FromQuery] string query, 
         [FromQuery] int limit = 10, 
