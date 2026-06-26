@@ -441,4 +441,70 @@ public sealed class ReviewRepositoryTests
 
         Assert.Null(result);
     }
+    
+    [Fact]
+    public async Task DeleteAsync_ShouldRemoveReview()
+    {
+        var options = new DbContextOptionsBuilder<NeedleDbContext>()
+            .UseNpgsql(
+                "Host=localhost;Port=5432;Database=needle;Username=needle;Password=needle")
+            .Options;
+
+        await using var dbContext = new NeedleDbContext(options);
+
+        await dbContext.Database.MigrateAsync();
+
+        var repository = new ReviewRepository(dbContext);
+
+        var album = Album.CreateManual(
+            Guid.NewGuid(),
+            "Kind of Blue",
+            "Miles Davis",
+            1959);
+
+        var review = Review.Create(
+            Guid.NewGuid(),
+            album.Id,
+            Guid.NewGuid(),
+            new Rating(4.5m),
+            "Review to delete.",
+            new DateTimeOffset(2026, 6, 26, 12, 0, 0, TimeSpan.Zero));
+
+        try
+        {
+            await dbContext.Albums.AddAsync(album);
+            await dbContext.Reviews.AddAsync(review);
+            await dbContext.SaveChangesAsync();
+
+            dbContext.ChangeTracker.Clear();
+
+            var persistedReview = await repository.GetByIdAsync(
+                review.Id,
+                CancellationToken.None);
+
+            Assert.NotNull(persistedReview);
+
+            await repository.DeleteAsync(
+                persistedReview,
+                CancellationToken.None);
+
+            dbContext.ChangeTracker.Clear();
+
+            var deletedReview = await dbContext.Reviews
+                .AsNoTracking()
+                .SingleOrDefaultAsync(storedReview => storedReview.Id == review.Id);
+
+            Assert.Null(deletedReview);
+        }
+        finally
+        {
+            await dbContext.Reviews
+                .Where(storedReview => storedReview.Id == review.Id)
+                .ExecuteDeleteAsync();
+
+            await dbContext.Albums
+                .Where(storedAlbum => storedAlbum.Id == album.Id)
+                .ExecuteDeleteAsync();
+        }
+    }
 }

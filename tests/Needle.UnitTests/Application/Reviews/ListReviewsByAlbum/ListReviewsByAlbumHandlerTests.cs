@@ -183,5 +183,12 @@ public sealed class ListReviewsByAlbumHandlerTests
         {
             throw new NotSupportedException();
         }
+        
+        public Task DeleteAsync(
+            Review review,
+            CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

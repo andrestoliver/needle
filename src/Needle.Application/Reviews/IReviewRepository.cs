@@ -30,4 +30,6 @@ public interface IReviewRepository
     Task<ReviewDetails?> GetDetailsByIdAsync(
         Guid id,
         CancellationToken cancellationToken);
+    
+    Task DeleteAsync(Review review, CancellationToken cancellationToken);
 }

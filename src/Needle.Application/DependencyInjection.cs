@@ -4,6 +4,7 @@ using Needle.Application.Albums.GetAlbumById;
 using Needle.Application.Albums.ImportAlbum;
 using Needle.Application.Albums.SearchExternalAlbums;
 using Needle.Application.Reviews.CreateReview;
+using Needle.Application.Reviews.DeleteReview;
 using Needle.Application.Reviews.GetReviewById;
 using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Application.Reviews.UpdateReview;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<UpdateReviewHandler>();
         services.AddScoped<ListReviewsByAlbumHandler>();
         services.AddScoped<GetReviewByIdHandler>();
+        services.AddScoped<DeleteReviewHandler>();
 
         return services;
     }
