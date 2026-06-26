@@ -135,4 +135,97 @@ public sealed class ReviewTests
             text,
             createdAt ?? CreatedAt);
     }
+    
+    [Fact]
+public void Update_WithValidData_ShouldUpdateReview()
+{
+    var review = CreateReview();
+    var updatedAt = CreatedAt.AddHours(1);
+
+    review.Update(
+        new Rating(5.0m),
+        "updated text",
+        updatedAt);
+
+    Assert.Equal(new Rating(5.0m), review.Rating);
+    Assert.Equal("updated text", review.Text);
+    Assert.Equal(CreatedAt, review.CreatedAt);
+    Assert.Equal(updatedAt, review.UpdatedAt);
+}
+
+[Fact]
+public void Update_WithText_ShouldTrimText()
+{
+    var review = CreateReview();
+    var updatedAt = CreatedAt.AddHours(1);
+
+    review.Update(
+        new Rating(4.0m),
+        "  updated text  ",
+        updatedAt);
+
+    Assert.Equal("updated text", review.Text);
+}
+
+[Theory]
+[InlineData(null)]
+[InlineData("")]
+[InlineData("   ")]
+public void Update_WithEmptyText_ShouldStoreNull(string? text)
+{
+    var review = CreateReview();
+    var updatedAt = CreatedAt.AddHours(1);
+
+    review.Update(
+        new Rating(4.0m),
+        text,
+        updatedAt);
+
+    Assert.Null(review.Text);
+}
+
+[Fact]
+public void Update_WithTextLongerThan2000Characters_ShouldThrow()
+{
+    var review = CreateReview();
+    var text = new string('a', 2001);
+    var updatedAt = CreatedAt.AddHours(1);
+
+    var exception = Assert.Throws<ArgumentException>(() =>
+        review.Update(
+            new Rating(4.0m),
+            text,
+            updatedAt));
+
+    Assert.Equal("text", exception.ParamName);
+}
+
+[Fact]
+public void Update_WithDefaultRating_ShouldThrow()
+{
+    var review = CreateReview();
+    var updatedAt = CreatedAt.AddHours(1);
+
+    var exception = Assert.Throws<ArgumentException>(() =>
+        review.Update(
+            default,
+            "updated text",
+            updatedAt));
+
+    Assert.Equal("rating", exception.ParamName);
+}
+
+[Fact]
+public void Update_WithDefaultUpdatedAt_ShouldThrow()
+{
+    var review = CreateReview();
+
+    var exception = Assert.Throws<ArgumentException>(() =>
+        review.Update(
+            new Rating(4.0m),
+            "updated text",
+            default));
+
+    Assert.Equal("updatedAt", exception.ParamName);
+}
 }
