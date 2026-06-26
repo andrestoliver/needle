@@ -55,6 +55,13 @@ cliente.
 | `PUT` | `/api/albums/{albumId}/reviews/{reviewId}` | Atualiza uma review |
 | `DELETE` | `/api/albums/{albumId}/reviews/{reviewId}` | Remove uma review |
 
+## Autenticação
+
+A API possui um endpoint temporário para emissão de JWT em ambiente de estudo:
+
+```http
+POST /api/auth/dev-token
+
 ## Regras de negócio atuais
 
 ### Álbuns

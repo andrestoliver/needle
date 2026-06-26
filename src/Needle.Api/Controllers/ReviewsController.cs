@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Needle.Api.Contracts.Reviews;
 using Needle.Application.Reviews.CreateReview;
@@ -41,6 +43,7 @@ public sealed class ReviewsController : ControllerBase
     /// <summary>
     /// Creates a review for an album.
     /// </summary>
+    [Authorize]
     [HttpPost]
     [ProducesResponseType(typeof(CreateReviewResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -52,7 +55,7 @@ public sealed class ReviewsController : ControllerBase
     {
         var command = new CreateReviewCommand(
             albumId,
-            request.UserId,
+            GetAuthenticatedUserId(),
             request.Rating,
             request.Text);
 
@@ -90,6 +93,7 @@ public sealed class ReviewsController : ControllerBase
     /// <summary>
     /// Updates an existing album review.
     /// </summary>
+    [Authorize]
     [HttpPut("{reviewId:guid}")]
     [ProducesResponseType(typeof(UpdateReviewResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -103,10 +107,10 @@ public sealed class ReviewsController : ControllerBase
         var command = new UpdateReviewCommand(
             albumId,
             reviewId,
-            request.UserId,
+            GetAuthenticatedUserId(),
             request.Rating,
             request.Text);
-
+        
         var result = await _updateReviewHandler.HandleAsync(
             command,
             cancellationToken);
@@ -133,7 +137,7 @@ public sealed class ReviewsController : ControllerBase
     }
     
     /// <summary>
-    /// Gets a specific review from an album.
+    /// Gets a list of reviews from an album.
     /// </summary>
     [HttpGet("{reviewId:guid}")]
     [ProducesResponseType(typeof(ReviewResponseItem), StatusCodes.Status200OK)]
@@ -169,8 +173,9 @@ public sealed class ReviewsController : ControllerBase
     }
     
     /// <summary>
-    /// Deletes an album review.
+    /// Gets a specific review from an album.
     /// </summary>
+    [Authorize]
     [HttpDelete("{reviewId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -213,13 +218,12 @@ public sealed class ReviewsController : ControllerBase
     public async Task<IActionResult> Delete(
         Guid albumId,
         Guid reviewId,
-        DeleteReviewRequest request,
         CancellationToken cancellationToken)
     {
         var command = new DeleteReviewCommand(
             albumId,
             reviewId,
-            request.UserId);
+            GetAuthenticatedUserId());
 
         var result = await _deleteReviewHandler.HandleAsync(
             command,
@@ -236,5 +240,18 @@ public sealed class ReviewsController : ControllerBase
             _ => throw new InvalidOperationException(
                 $"Unexpected delete review status: {result.Status}.")
         };
+    }
+    
+    private Guid GetAuthenticatedUserId()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new InvalidOperationException(
+                "Authenticated user id claim is missing or invalid.");
+        }
+
+        return parsedUserId;
     }
 }
