@@ -177,6 +177,69 @@ public sealed class ReviewRepositoryTests
         }
     }
 
+    [Fact]
+    public async Task UpdateAsync_ShouldPersistReviewChanges()
+    {
+        var options = CreateOptions();
+
+        await using var dbContext = new NeedleDbContext(options);
+        await dbContext.Database.MigrateAsync();
+
+        var repository = new ReviewRepository(dbContext);
+        var album = await CreateAlbumAsync(dbContext);
+
+        var review = Review.Create(
+            Guid.NewGuid(),
+            album.Id,
+            Guid.NewGuid(),
+            new Rating(3.5m),
+            "original text",
+            CreateUtcNow());
+
+        var updatedAt = CreateUtcNow().AddHours(1);
+
+        try
+        {
+            dbContext.Reviews.Add(review);
+            await dbContext.SaveChangesAsync();
+
+            dbContext.ChangeTracker.Clear();
+
+            var reviewToUpdate = await repository.GetByIdAsync(
+                review.Id,
+                CancellationToken.None);
+
+            Assert.NotNull(reviewToUpdate);
+
+            reviewToUpdate.Update(
+                new Rating(5.0m),
+                "updated text",
+                updatedAt);
+
+            await repository.UpdateAsync(
+                reviewToUpdate,
+                CancellationToken.None);
+
+            dbContext.ChangeTracker.Clear();
+
+            var updatedReview = await dbContext.Reviews
+                .SingleAsync(item => item.Id == review.Id);
+
+            Assert.Equal(review.Id, updatedReview.Id);
+            Assert.Equal(review.AlbumId, updatedReview.AlbumId);
+            Assert.Equal(review.UserId, updatedReview.UserId);
+            Assert.Equal(new Rating(5.0m), updatedReview.Rating);
+            Assert.Equal("updated text", updatedReview.Text);
+            Assert.Equal(review.CreatedAt, updatedReview.CreatedAt);
+            Assert.Equal(updatedAt, updatedReview.UpdatedAt);
+        }
+        finally
+        {
+            await CleanReviewAsync(dbContext, review.Id);
+            await CleanAlbumAsync(dbContext, album.Id);
+        }
+    }
+    
     private static DbContextOptions<NeedleDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<NeedleDbContext>()

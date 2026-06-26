@@ -36,4 +36,21 @@ public sealed class ReviewRepository : IReviewRepository
                     review.UserId == userId,
                 cancellationToken);
     }
+    
+    public async Task<Review?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _dbContext.Reviews
+            .SingleOrDefaultAsync(
+                review => review.Id == id,
+                cancellationToken);
+    }
+    
+    public async Task UpdateAsync(
+        Review review,
+        CancellationToken cancellationToken)
+    {
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
