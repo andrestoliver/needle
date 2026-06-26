@@ -92,4 +92,13 @@ public sealed class ReviewRepository : IReviewRepository
                 review.UpdatedAt))
             .SingleOrDefaultAsync(cancellationToken);
     }
+    
+    public async Task DeleteAsync(
+        Review review,
+        CancellationToken cancellationToken)
+    {
+        _dbContext.Reviews.Remove(review);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
