@@ -1,10 +1,10 @@
 # Needle
 
 Needle é um diário social de álbuns inspirado no Letterboxd. Usuários podem
-registrar álbuns ouvidos, publicar avaliações e resenhas, acompanhar outras
-pessoas e receber notificações sobre atividades relevantes.
+registrar álbuns, publicar avaliações e resenhas, consultar reviews de outras
+pessoas e, futuramente, acompanhar atividades sociais relacionadas a música.
 
-O projeto é uma POC de estudo. Seu objetivo principal não é entregar um produto
+O projeto é uma POC de estudo. O objetivo principal não é entregar um produto
 completo, mas exercitar decisões de arquitetura e práticas comuns em sistemas
 .NET usados em produção.
 
@@ -18,202 +18,101 @@ completo, mas exercitar decisões de arquitetura e práticas comuns em sistemas
 - Dockerizar aplicações e infraestrutura.
 - Criar testes unitários e de integração relevantes.
 - Instrumentar logs, métricas e traces com OpenTelemetry.
-- Montar uma pipeline de CI/CD com GitHub Actions.
+- Montar pipelines de CI/CD com GitHub Actions.
 - Registrar decisões arquiteturais e seus trade-offs.
+- Praticar system design em incrementos pequenos e verificáveis.
 
-## Escopo inicial
+## Escopo atual
 
-A primeira versão deve permitir:
+A API atual permite:
 
-1. Cadastrar álbuns manualmente.
-2. Registrar que um usuário ouviu um álbum.
-3. Avaliar um álbum de 1 a 5 estrelas.
-4. Escrever uma resenha.
-5. Consultar avaliações de um álbum.
-6. Calcular a nota média de um álbum.
+- cadastrar álbuns manualmente;
+- consultar álbuns por id;
+- pesquisar álbuns no MusicBrainz sem persistir no banco local;
+- importar álbuns sob demanda do MusicBrainz;
+- criar reviews para álbuns;
+- listar reviews de um álbum;
+- consultar uma review específica;
+- atualizar uma review;
+- deletar uma review.
 
-Funcionalidades sociais, mensageria e integrações externas serão adicionadas em
-etapas posteriores, quando houver um problema concreto que justifique cada uma.
+Como ainda não há autenticação, endpoints de review recebem `userId` no corpo
+da requisição. Isso é uma decisão temporária da POC. Quando JWT for introduzido,
+o usuário autenticado deve vir das claims do token, não do payload enviado pelo
+cliente.
+
+## Endpoints principais
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/api/albums` | Cadastra um álbum manualmente |
+| `GET` | `/api/albums/{id}` | Consulta um álbum local por id |
+| `GET` | `/api/catalog/albums?query={query}&limit={limit}` | Pesquisa álbuns no MusicBrainz |
+| `POST` | `/api/albums/import` | Importa um álbum do MusicBrainz para o catálogo local |
+| `POST` | `/api/albums/{albumId}/reviews` | Cria uma review para um álbum |
+| `GET` | `/api/albums/{albumId}/reviews` | Lista reviews de um álbum |
+| `GET` | `/api/albums/{albumId}/reviews/{reviewId}` | Consulta uma review específica |
+| `PUT` | `/api/albums/{albumId}/reviews/{reviewId}` | Atualiza uma review |
+| `DELETE` | `/api/albums/{albumId}/reviews/{reviewId}` | Remove uma review |
+
+## Regras de negócio atuais
+
+### Álbuns
+
+- Um álbum pode ser criado manualmente.
+- Um álbum pode ser importado do MusicBrainz sob demanda.
+- O Needle não sincroniza catálogos completos.
+- O `externalId` identifica a origem externa quando o álbum veio do MusicBrainz.
+- Álbuns importados preservam a separação entre domínio interno e modelo externo.
+
+### Reviews
+
+- Uma review pertence a um álbum e a um usuário.
+- Um usuário pode ter apenas uma review por álbum.
+- A nota deve estar entre `0.5` e `5.0`.
+- A nota deve avançar em incrementos de `0.5`.
+- O texto da review é opcional.
+- O texto da review não pode ultrapassar 2000 caracteres.
+- Atualizações preservam `CreatedAt` e preenchem `UpdatedAt`.
+- Deletes atuais são hard deletes.
+- Enquanto não houver JWT, ownership é validado usando o `userId` recebido no
+  request.
 
 ## Catálogo de álbuns
 
-Álbuns fazem parte do domínio do Needle. Inicialmente, serão cadastrados
-manualmente e persistidos no PostgreSQL.
+Álbuns fazem parte do domínio do Needle. Eles podem ser cadastrados manualmente
+ou importados sob demanda do MusicBrainz.
 
-Em uma etapa futura, o MusicBrainz poderá ser usado como fonte externa para
-importação sob demanda:
+O MusicBrainz é tratado como uma fonte externa, não como dono do domínio. A API
+externa é acessada pela camada de infraestrutura e convertida para modelos da
+camada de aplicação antes de atravessar as fronteiras internas.
+
+Fluxo de importação:
 
 1. O usuário pesquisa no catálogo externo.
 2. O Needle apresenta uma quantidade limitada de resultados.
-3. Somente o álbum escolhido é persistido localmente.
-4. O modelo externo é convertido para o modelo do Needle.
+3. O usuário escolhe um álbum.
+4. Somente o álbum escolhido é persistido localmente.
+5. O modelo externo é convertido para o modelo interno do Needle.
 
 O sistema não deve sincronizar o catálogo completo nem armazenar áudio, imagens
-ou respostas JSON brutas. Capas devem ser referenciadas por URL. Essa estratégia
-mantém o consumo de disco pequeno e permite estudar integração HTTP, cache,
-rate limiting e Anti-Corruption Layer sem tornar a POC dependente do
-MusicBrainz.
+ou respostas JSON brutas. Essa estratégia mantém o consumo de disco pequeno e
+permite estudar integração HTTP, timeout, rate limiting, cache e
+Anti-Corruption Layer sem tornar a POC dependente do MusicBrainz.
 
 ## Estratégia arquitetural
 
-O Needle começará como um **monólito modular**.
+O Needle começa como um **monólito modular**.
 
 Essa escolha reduz o custo operacional durante as primeiras etapas e permite
 descobrir as fronteiras do domínio antes de distribuí-las pela rede. Criar
 microsserviços desde o início adicionaria deploys, observabilidade distribuída,
 mensageria e falhas de rede antes de sabermos se essas fronteiras são boas.
 
-Isso não significa construir um sistema sem separação. O código seguirá DDD e
+Isso não significa construir um sistema sem separação. O código segue DDD e
 Clean Architecture, com dependências apontando de fora para dentro:
 
 ```text
-Api -> Infrastructure -> Application -> Domain
-          Application -----------------> Domain
-```
-
-O projeto `Domain` não deve depender de banco de dados, mensageria, ASP.NET Core
-ou detalhes de infraestrutura. O projeto `Api` será o ponto de composição da
-aplicação.
-
-Estrutura inicial planejada:
-
-```text
-Needle.sln
-src/
-  Needle.Api/
-  Needle.Application/
-  Needle.Domain/
-  Needle.Infrastructure/
-tests/
-  Needle.UnitTests/
-  Needle.IntegrationTests/
-```
-
-Novos projetos só devem ser criados quando representarem uma fronteira ou
-necessidade real. DDD não exige uma classe, interface ou projeto para cada
-conceito.
-
-## Evolução planejada
-
-### Fase 1 - Fundação
-
-- Criar a solution e os projetos.
-- Modelar o domínio mínimo de álbuns e avaliações.
-- Implementar os primeiros casos de uso.
-- Adicionar testes unitários.
-
-### Fase 2 - Persistência e API
-
-- Adicionar PostgreSQL e migrations.
-- Criar endpoints REST.
-- Adicionar testes de integração.
-- Dockerizar a API e o banco.
-
-### Fase 3 - Catálogo externo
-
-- Integrar com MusicBrainz usando `HttpClient`.
-- Implementar importação sob demanda.
-- Tratar timeout, indisponibilidade, rate limit e cache.
-- Isolar o modelo externo com uma Anti-Corruption Layer.
-
-### Fase 4 - Recursos sociais
-
-- Adicionar usuários e seguidores.
-- Publicar atividades de avaliações.
-- Construir um feed simples.
-
-### Fase 5 - Eventos e Kafka
-
-- Introduzir eventos de negócio como `AlbumReviewed`.
-- Implementar Transactional Outbox.
-- Estudar particionamento, consumer groups, ordenação, retenção e replay.
-- Garantir idempotência nos consumidores.
-
-### Fase 6 - Tarefas e RabbitMQ
-
-- Transformar eventos relevantes em tarefas de notificação.
-- Implementar workers, retry com backoff e DLQ.
-- Comparar eventos duráveis no Kafka com comandos de execução no RabbitMQ.
-
-### Fase 7 - Observabilidade
-
-- Instrumentar logs estruturados, métricas e tracing com OpenTelemetry.
-- Usar Prometheus, Grafana e uma ferramenta de visualização de traces.
-- Propagar contexto entre HTTP, Kafka e RabbitMQ.
-
-### Fase 8 - CI/CD
-
-- Executar build, análise e testes no GitHub Actions.
-- Construir imagens Docker.
-- Aplicar versionamento e validações de qualidade.
-
-O roteiro é uma direção, não um contrato. Cada tecnologia deve entrar para
-resolver um problema observável, acompanhada de uma discussão sobre alternativas
-e custo operacional.
-
-## Infraestrutura prevista
-
-- .NET
-- ASP.NET Core
-- PostgreSQL
-- Kafka
-- RabbitMQ
-- Docker e Docker Compose
-- OpenTelemetry
-- Prometheus
-- Grafana
-- GitHub Actions
-
-Os componentes não precisam executar todos ao mesmo tempo. Durante o
-desenvolvimento local, somente a infraestrutura necessária para a etapa atual
-deve ser iniciada, reduzindo o uso de memória e disco.
-
-## Forma de trabalho
-
-O desenvolvimento será incremental:
-
-1. Definir um pequeno objetivo.
-2. Explicar a decisão e os conceitos envolvidos.
-3. Registrar trade-offs e alternativas relevantes.
-4. Implementar apenas o incremento atual.
-5. Escrever e executar os testes correspondentes.
-6. Revisar o resultado antes de avançar.
-
-Agentes podem escrever o código, mas decisões de domínio e arquitetura devem
-permanecer explícitas e compreensíveis para o mantenedor. As regras detalhadas
-para agentes estão em [AGENTS.md](AGENTS.md).
-
-## Commits
-
-O projeto adota [Conventional Commits](https://www.conventionalcommits.org/):
-
-```text
-<tipo>(escopo opcional): <descrição curta>
-```
-
-Exemplos:
-
-```text
-feat: add album review
-fix: prevent duplicate listening record
-test: cover album rating rules
-docs: document MusicBrainz integration decision
-chore: configure solution tooling
-refactor: extract rating value object
-```
-
-O tipo do commit é obrigatório. Emojis não fazem parte do padrão do projeto,
-mantendo compatibilidade direta com changelogs, versionamento semântico e outras
-automações.
-
-## Fora do escopo inicial
-
-- Streaming ou armazenamento de música.
-- Armazenamento local de capas.
-- Sincronização integral de catálogos externos.
-- Sistema de recomendação.
-- Frontend.
-- Autenticação completa.
-- Kubernetes.
-- Microsserviços independentes antes de existirem motivos para extração.
-
+Needle.Api -> Needle.Infrastructure -> Needle.Application -> Needle.Domain
+Needle.Api ---------------------------> Needle.Application
+Needle.Infrastructure ----------------> Needle.Domain

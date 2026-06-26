@@ -38,7 +38,13 @@ public sealed class ReviewsController : ControllerBase
         _deleteReviewHandler = deleteReviewHandler;
     }
 
+    /// <summary>
+    /// Creates a review for an album.
+    /// </summary>
     [HttpPost]
+    [ProducesResponseType(typeof(CreateReviewResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
         Guid albumId,
         CreateReviewRequest request,
@@ -81,7 +87,13 @@ public sealed class ReviewsController : ControllerBase
         };
     }
     
+    /// <summary>
+    /// Updates an existing album review.
+    /// </summary>
     [HttpPut("{reviewId:guid}")]
+    [ProducesResponseType(typeof(UpdateReviewResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         Guid albumId,
         Guid reviewId,
@@ -120,7 +132,12 @@ public sealed class ReviewsController : ControllerBase
         };
     }
     
-    [HttpGet]
+    /// <summary>
+    /// Gets a specific review from an album.
+    /// </summary>
+    [HttpGet("{reviewId:guid}")]
+    [ProducesResponseType(typeof(ReviewResponseItem), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListByAlbum(
         Guid albumId,
         CancellationToken cancellationToken)
@@ -151,7 +168,13 @@ public sealed class ReviewsController : ControllerBase
         };
     }
     
-    [HttpGet("{reviewId:guid}")]
+    /// <summary>
+    /// Deletes an album review.
+    /// </summary>
+    [HttpDelete("{reviewId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
         Guid albumId,
         Guid reviewId,
@@ -180,7 +203,13 @@ public sealed class ReviewsController : ControllerBase
         };
     }
     
+    /// <summary>
+    /// Deletes an album review.
+    /// </summary>
     [HttpDelete("{reviewId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
         Guid albumId,
         Guid reviewId,
