@@ -36,10 +36,9 @@ A API atual permite:
 - atualizar uma review;
 - deletar uma review.
 
-Como ainda não há autenticação, endpoints de review recebem `userId` no corpo
-da requisição. Isso é uma decisão temporária da POC. Quando JWT for introduzido,
-o usuário autenticado deve vir das claims do token, não do payload enviado pelo
-cliente.
+A autenticação atual usa um JWT de desenvolvimento para permitir testes locais.
+Endpoints de escrita de review devem usar o usuário autenticado a partir das
+claims do token, não um `userId` enviado pelo cliente no payload.
 
 ## Endpoints principais
 
@@ -54,6 +53,26 @@ cliente.
 | `GET` | `/api/albums/{albumId}/reviews/{reviewId}` | Consulta uma review específica |
 | `PUT` | `/api/albums/{albumId}/reviews/{reviewId}` | Atualiza uma review |
 | `DELETE` | `/api/albums/{albumId}/reviews/{reviewId}` | Remove uma review |
+
+## Autenticação
+
+A API possui um endpoint temporário para emissão de JWT em ambiente de estudo:
+
+```http
+POST /api/auth/dev-token
+```
+
+Esse endpoint existe apenas para facilitar testes locais da POC enquanto ainda
+não há login real, BFF ou provedor de identidade externo.
+
+Ele não representa um fluxo seguro de produção. Em um ambiente real, tokens
+seriam emitidos por um provedor confiável, como Cognito, Auth0, Keycloak, Azure
+AD ou outro Identity Provider, e a API apenas validaria assinatura, issuer,
+audience, expiração e permissões do token.
+
+Enquanto esse fluxo real não existe, o token gerado localmente será usado para
+remover `userId` dos payloads de reviews e ler o usuário autenticado a partir
+das claims.
 
 ## Regras de negócio atuais
 
@@ -75,8 +94,7 @@ cliente.
 - O texto da review não pode ultrapassar 2000 caracteres.
 - Atualizações preservam `CreatedAt` e preenchem `UpdatedAt`.
 - Deletes atuais são hard deletes.
-- Enquanto não houver JWT, ownership é validado usando o `userId` recebido no
-  request.
+- Ownership deve ser validado usando o usuário autenticado nas claims do JWT.
 
 ## Catálogo de álbuns
 

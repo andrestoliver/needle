@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Needle.Api.Contracts.Reviews;
 using Needle.Application.Reviews.CreateReview;
@@ -41,8 +43,10 @@ public sealed class ReviewsController : ControllerBase
     /// <summary>
     /// Creates a review for an album.
     /// </summary>
+    [Authorize]
     [HttpPost]
     [ProducesResponseType(typeof(CreateReviewResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create(
@@ -52,7 +56,7 @@ public sealed class ReviewsController : ControllerBase
     {
         var command = new CreateReviewCommand(
             albumId,
-            request.UserId,
+            GetAuthenticatedUserId(),
             request.Rating,
             request.Text);
 
@@ -86,57 +90,12 @@ public sealed class ReviewsController : ControllerBase
                 $"Unexpected create review status: {result.Status}.")
         };
     }
-    
+
     /// <summary>
-    /// Updates an existing album review.
+    /// Lists reviews for an album.
     /// </summary>
-    [HttpPut("{reviewId:guid}")]
-    [ProducesResponseType(typeof(UpdateReviewResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(
-        Guid albumId,
-        Guid reviewId,
-        UpdateReviewRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = new UpdateReviewCommand(
-            albumId,
-            reviewId,
-            request.UserId,
-            request.Rating,
-            request.Text);
-
-        var result = await _updateReviewHandler.HandleAsync(
-            command,
-            cancellationToken);
-
-        return result.Status switch
-        {
-            UpdateReviewStatus.ReviewNotFound => NotFound(),
-
-            UpdateReviewStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden),
-
-            UpdateReviewStatus.Updated => Ok(
-                new UpdateReviewResponse(
-                    result.Review!.Id,
-                    result.Review.AlbumId,
-                    result.Review.UserId,
-                    result.Review.Rating.Value,
-                    result.Review.Text,
-                    result.Review.CreatedAt,
-                    result.Review.UpdatedAt)),
-
-            _ => throw new InvalidOperationException(
-                $"Unexpected update review status: {result.Status}.")
-        };
-    }
-    
-    /// <summary>
-    /// Gets a specific review from an album.
-    /// </summary>
-    [HttpGet("{reviewId:guid}")]
-    [ProducesResponseType(typeof(ReviewResponseItem), StatusCodes.Status200OK)]
+    [HttpGet]
+    [ProducesResponseType(typeof(ListReviewsByAlbumResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListByAlbum(
         Guid albumId,
@@ -167,13 +126,12 @@ public sealed class ReviewsController : ControllerBase
                 $"Unexpected list reviews by album status: {result.Status}.")
         };
     }
-    
+
     /// <summary>
-    /// Deletes an album review.
+    /// Gets a specific review from an album.
     /// </summary>
-    [HttpDelete("{reviewId:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [HttpGet("{reviewId:guid}")]
+    [ProducesResponseType(typeof(ReviewResponseItem), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
         Guid albumId,
@@ -202,24 +160,72 @@ public sealed class ReviewsController : ControllerBase
                 $"Unexpected get review by id status: {result.Status}.")
         };
     }
-    
+
+    /// <summary>
+    /// Updates an existing album review.
+    /// </summary>
+    [Authorize]
+    [HttpPut("{reviewId:guid}")]
+    [ProducesResponseType(typeof(UpdateReviewResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(
+        Guid albumId,
+        Guid reviewId,
+        UpdateReviewRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateReviewCommand(
+            albumId,
+            reviewId,
+            GetAuthenticatedUserId(),
+            request.Rating,
+            request.Text);
+
+        var result = await _updateReviewHandler.HandleAsync(
+            command,
+            cancellationToken);
+
+        return result.Status switch
+        {
+            UpdateReviewStatus.ReviewNotFound => NotFound(),
+
+            UpdateReviewStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden),
+
+            UpdateReviewStatus.Updated => Ok(
+                new UpdateReviewResponse(
+                    result.Review!.Id,
+                    result.Review.AlbumId,
+                    result.Review.UserId,
+                    result.Review.Rating.Value,
+                    result.Review.Text,
+                    result.Review.CreatedAt,
+                    result.Review.UpdatedAt)),
+
+            _ => throw new InvalidOperationException(
+                $"Unexpected update review status: {result.Status}.")
+        };
+    }
+
     /// <summary>
     /// Deletes an album review.
     /// </summary>
+    [Authorize]
     [HttpDelete("{reviewId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
         Guid albumId,
         Guid reviewId,
-        DeleteReviewRequest request,
         CancellationToken cancellationToken)
     {
         var command = new DeleteReviewCommand(
             albumId,
             reviewId,
-            request.UserId);
+            GetAuthenticatedUserId());
 
         var result = await _deleteReviewHandler.HandleAsync(
             command,
@@ -236,5 +242,18 @@ public sealed class ReviewsController : ControllerBase
             _ => throw new InvalidOperationException(
                 $"Unexpected delete review status: {result.Status}.")
         };
+    }
+
+    private Guid GetAuthenticatedUserId()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new InvalidOperationException(
+                "Authenticated user id claim is missing or invalid.");
+        }
+
+        return parsedUserId;
     }
 }
