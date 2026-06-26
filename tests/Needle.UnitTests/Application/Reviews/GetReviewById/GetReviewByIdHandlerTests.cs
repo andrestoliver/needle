@@ -159,5 +159,12 @@ public sealed class GetReviewByIdHandlerTests
                     ? Review
                     : null);
         }
+        
+        public Task DeleteAsync(
+            Review review,
+            CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

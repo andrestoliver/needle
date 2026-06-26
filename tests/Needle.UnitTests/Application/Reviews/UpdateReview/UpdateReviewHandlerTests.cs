@@ -222,6 +222,13 @@ public sealed class UpdateReviewHandlerTests
         {
             throw new NotSupportedException();
         }
+        
+        public Task DeleteAsync(
+            Review review,
+            CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private sealed class FakeClock(DateTimeOffset utcNow) : IClock
