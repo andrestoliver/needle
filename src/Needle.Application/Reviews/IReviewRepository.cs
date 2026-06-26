@@ -12,4 +12,12 @@ public interface IReviewRepository
         Guid albumId,
         Guid userId,
         CancellationToken cancellationToken);
+    
+    Task<Review?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken);
+
+    Task UpdateAsync(
+        Review review,
+        CancellationToken cancellationToken);
 }

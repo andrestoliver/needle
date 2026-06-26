@@ -4,6 +4,7 @@ using Needle.Application.Albums.GetAlbumById;
 using Needle.Application.Albums.ImportAlbum;
 using Needle.Application.Albums.SearchExternalAlbums;
 using Needle.Application.Reviews.CreateReview;
+using Needle.Application.Reviews.UpdateReview;
 
 namespace Needle.Application;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<SearchExternalAlbumsHandler>();
         services.AddScoped<ImportAlbumHandler>();
         services.AddScoped<CreateReviewHandler>();
+        services.AddScoped<UpdateReviewHandler>();
 
         return services;
     }
