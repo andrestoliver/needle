@@ -293,4 +293,87 @@ public sealed class ReviewRepositoryTests
             utcNow.Second,
             TimeSpan.Zero);
     }
+    
+    [Fact]
+public async Task ListByAlbumAsync_ShouldReturnReviewsFromAlbumOrderedByLatestActivity()
+{
+    var options = CreateOptions();
+
+    await using var dbContext = new NeedleDbContext(options);
+    await dbContext.Database.MigrateAsync();
+
+    var repository = new ReviewRepository(dbContext);
+    var album = await CreateAlbumAsync(dbContext);
+    var anotherAlbum = await CreateAlbumAsync(dbContext);
+
+    var olderReview = Review.Create(
+        Guid.NewGuid(),
+        album.Id,
+        Guid.NewGuid(),
+        new Rating(3.5m),
+        "older review",
+        CreateUtcNow().AddHours(-2));
+
+    var newerReview = Review.Create(
+        Guid.NewGuid(),
+        album.Id,
+        Guid.NewGuid(),
+        new Rating(4.5m),
+        "newer review",
+        CreateUtcNow().AddHours(-1));
+
+    var reviewFromAnotherAlbum = Review.Create(
+        Guid.NewGuid(),
+        anotherAlbum.Id,
+        Guid.NewGuid(),
+        new Rating(5.0m),
+        "another album review",
+        CreateUtcNow());
+
+    var updatedAt = CreateUtcNow().AddHours(1);
+
+    olderReview.Update(
+        new Rating(4.0m),
+        "older review updated",
+        updatedAt);
+
+    try
+    {
+        dbContext.Reviews.AddRange(
+            olderReview,
+            newerReview,
+            reviewFromAnotherAlbum);
+
+        await dbContext.SaveChangesAsync();
+
+        dbContext.ChangeTracker.Clear();
+
+        var result = await repository.ListByAlbumAsync(
+            album.Id,
+            CancellationToken.None);
+
+        Assert.Equal(2, result.Count);
+
+        var reviews = result.ToArray();
+
+        Assert.Equal(olderReview.Id, reviews[0].Id);
+        Assert.Equal(updatedAt, reviews[0].UpdatedAt);
+        Assert.Equal("older review updated", reviews[0].Text);
+
+        Assert.Equal(newerReview.Id, reviews[1].Id);
+        Assert.Null(reviews[1].UpdatedAt);
+
+        Assert.All(
+            reviews,
+            review => Assert.Equal(album.Id, review.AlbumId));
+    }
+    finally
+    {
+        await CleanReviewAsync(dbContext, olderReview.Id);
+        await CleanReviewAsync(dbContext, newerReview.Id);
+        await CleanReviewAsync(dbContext, reviewFromAnotherAlbum.Id);
+        await CleanAlbumAsync(dbContext, album.Id);
+        await CleanAlbumAsync(dbContext, anotherAlbum.Id);
+    }
+}
 }

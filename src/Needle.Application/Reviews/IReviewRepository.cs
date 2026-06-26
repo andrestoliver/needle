@@ -1,3 +1,4 @@
+using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Domain.Reviews;
 
 namespace Needle.Application.Reviews;
@@ -19,5 +20,9 @@ public interface IReviewRepository
 
     Task UpdateAsync(
         Review review,
+        CancellationToken cancellationToken);
+    
+    Task<IReadOnlyCollection<ReviewListItem>> ListByAlbumAsync(
+        Guid albumId,
         CancellationToken cancellationToken);
 }
