@@ -1,5 +1,6 @@
 using Needle.Application.Common.Time;
 using Needle.Application.Reviews;
+using Needle.Application.Reviews.GetReviewById;
 using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Application.Reviews.UpdateReview;
 using Needle.Domain.Reviews;
@@ -210,6 +211,13 @@ public sealed class UpdateReviewHandlerTests
         
         public Task<IReadOnlyCollection<ReviewListItem>> ListByAlbumAsync(
             Guid albumId,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+        
+        public Task<ReviewDetails?> GetDetailsByIdAsync(
+            Guid id,
             CancellationToken cancellationToken)
         {
             throw new NotSupportedException();

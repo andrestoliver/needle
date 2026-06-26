@@ -1,5 +1,6 @@
 using Needle.Application.Albums;
 using Needle.Application.Reviews;
+using Needle.Application.Reviews.GetReviewById;
 using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Domain.Albums;
 using Needle.Domain.Reviews;
@@ -174,6 +175,13 @@ public sealed class ListReviewsByAlbumHandlerTests
             ReceivedCancellationToken = cancellationToken;
 
             return Task.FromResult(Reviews);
+        }
+        
+        public Task<ReviewDetails?> GetDetailsByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
         }
     }
 }

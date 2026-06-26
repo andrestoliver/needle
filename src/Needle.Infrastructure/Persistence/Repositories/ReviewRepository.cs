@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Needle.Application.Reviews;
+using Needle.Application.Reviews.GetReviewById;
 using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Domain.Reviews;
 
@@ -72,5 +73,23 @@ public sealed class ReviewRepository : IReviewRepository
                 review.CreatedAt,
                 review.UpdatedAt))
             .ToArrayAsync(cancellationToken);
+    }
+    
+    public async Task<ReviewDetails?> GetDetailsByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return await _dbContext.Reviews
+            .AsNoTracking()
+            .Where(review => review.Id == id)
+            .Select(review => new ReviewDetails(
+                review.Id,
+                review.AlbumId,
+                review.UserId,
+                review.Rating.Value,
+                review.Text,
+                review.CreatedAt,
+                review.UpdatedAt))
+            .SingleOrDefaultAsync(cancellationToken);
     }
 }
