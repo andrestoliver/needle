@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Needle.Api.Contracts.Reviews;
 using Needle.Application.Reviews.CreateReview;
+using Needle.Application.Reviews.DeleteReview;
 using Needle.Application.Reviews.GetReviewById;
 using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Application.Reviews.UpdateReview;
@@ -15,22 +16,26 @@ public sealed class ReviewsController : ControllerBase
     private readonly UpdateReviewHandler _updateReviewHandler;
     private readonly ListReviewsByAlbumHandler _listReviewsByAlbumHandler;
     private readonly GetReviewByIdHandler _getReviewByIdHandler;
+    private readonly DeleteReviewHandler _deleteReviewHandler;
 
     public ReviewsController(
         CreateReviewHandler createReviewHandler,
         UpdateReviewHandler updateReviewHandler,
         ListReviewsByAlbumHandler listReviewsByAlbumHandler,
-        GetReviewByIdHandler getReviewByIdHandler)
+        GetReviewByIdHandler getReviewByIdHandler,
+        DeleteReviewHandler deleteReviewHandler)
     {
         ArgumentNullException.ThrowIfNull(createReviewHandler);
         ArgumentNullException.ThrowIfNull(updateReviewHandler);
         ArgumentNullException.ThrowIfNull(listReviewsByAlbumHandler);
         ArgumentNullException.ThrowIfNull(getReviewByIdHandler);
+        ArgumentNullException.ThrowIfNull(deleteReviewHandler);
 
         _createReviewHandler = createReviewHandler;
         _updateReviewHandler = updateReviewHandler;
         _listReviewsByAlbumHandler = listReviewsByAlbumHandler;
         _getReviewByIdHandler = getReviewByIdHandler;
+        _deleteReviewHandler = deleteReviewHandler;
     }
 
     [HttpPost]
@@ -172,6 +177,35 @@ public sealed class ReviewsController : ControllerBase
 
             _ => throw new InvalidOperationException(
                 $"Unexpected get review by id status: {result.Status}.")
+        };
+    }
+    
+    [HttpDelete("{reviewId:guid}")]
+    public async Task<IActionResult> Delete(
+        Guid albumId,
+        Guid reviewId,
+        DeleteReviewRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeleteReviewCommand(
+            albumId,
+            reviewId,
+            request.UserId);
+
+        var result = await _deleteReviewHandler.HandleAsync(
+            command,
+            cancellationToken);
+
+        return result.Status switch
+        {
+            DeleteReviewStatus.ReviewNotFound => NotFound(),
+
+            DeleteReviewStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden),
+
+            DeleteReviewStatus.Deleted => NoContent(),
+
+            _ => throw new InvalidOperationException(
+                $"Unexpected delete review status: {result.Status}.")
         };
     }
 }
