@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Needle.Application.Reviews;
+using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Domain.Reviews;
 
 namespace Needle.Infrastructure.Persistence.Repositories;
@@ -52,5 +53,24 @@ public sealed class ReviewRepository : IReviewRepository
         CancellationToken cancellationToken)
     {
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+    
+    public async Task<IReadOnlyCollection<ReviewListItem>> ListByAlbumAsync(
+        Guid albumId,
+        CancellationToken cancellationToken)
+    {
+        return await _dbContext.Reviews
+            .AsNoTracking()
+            .Where(review => review.AlbumId == albumId)
+            .OrderByDescending(review => review.UpdatedAt ?? review.CreatedAt)
+            .Select(review => new ReviewListItem(
+                review.Id,
+                review.AlbumId,
+                review.UserId,
+                review.Rating.Value,
+                review.Text,
+                review.CreatedAt,
+                review.UpdatedAt))
+            .ToArrayAsync(cancellationToken);
     }
 }

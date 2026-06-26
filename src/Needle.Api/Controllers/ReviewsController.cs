@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Needle.Api.Contracts.Reviews;
 using Needle.Application.Reviews.CreateReview;
+using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Application.Reviews.UpdateReview;
 
 namespace Needle.Api.Controllers;
@@ -11,16 +12,20 @@ public sealed class ReviewsController : ControllerBase
 {
     private readonly CreateReviewHandler _createReviewHandler;
     private readonly UpdateReviewHandler _updateReviewHandler;
+    private readonly ListReviewsByAlbumHandler _listReviewsByAlbumHandler;
 
     public ReviewsController(
         CreateReviewHandler createReviewHandler,
-        UpdateReviewHandler updateReviewHandler)
+        UpdateReviewHandler updateReviewHandler,
+        ListReviewsByAlbumHandler listReviewsByAlbumHandler)
     {
         ArgumentNullException.ThrowIfNull(createReviewHandler);
         ArgumentNullException.ThrowIfNull(updateReviewHandler);
+        ArgumentNullException.ThrowIfNull(listReviewsByAlbumHandler);
 
         _createReviewHandler = createReviewHandler;
         _updateReviewHandler = updateReviewHandler;
+        _listReviewsByAlbumHandler = listReviewsByAlbumHandler;
     }
 
     [HttpPost]
@@ -97,6 +102,37 @@ public sealed class ReviewsController : ControllerBase
 
             _ => throw new InvalidOperationException(
                 $"Unexpected update review status: {result.Status}.")
+        };
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> ListByAlbum(
+        Guid albumId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _listReviewsByAlbumHandler.HandleAsync(
+            new ListReviewsByAlbumQuery(albumId),
+            cancellationToken);
+
+        return result.Status switch
+        {
+            ListReviewsByAlbumStatus.AlbumNotFound => NotFound(),
+
+            ListReviewsByAlbumStatus.Found => Ok(
+                new ListReviewsByAlbumResponse(
+                    result.Reviews
+                        .Select(review => new ReviewResponseItem(
+                            review.Id,
+                            review.AlbumId,
+                            review.UserId,
+                            review.Rating,
+                            review.Text,
+                            review.CreatedAt,
+                            review.UpdatedAt))
+                        .ToArray())),
+
+            _ => throw new InvalidOperationException(
+                $"Unexpected list reviews by album status: {result.Status}.")
         };
     }
 }
