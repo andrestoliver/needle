@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Needle.Api.Contracts.Reviews;
 using Needle.Application.Reviews.CreateReview;
+using Needle.Application.Reviews.GetReviewById;
 using Needle.Application.Reviews.ListReviewsByAlbum;
 using Needle.Application.Reviews.UpdateReview;
 
@@ -13,19 +14,23 @@ public sealed class ReviewsController : ControllerBase
     private readonly CreateReviewHandler _createReviewHandler;
     private readonly UpdateReviewHandler _updateReviewHandler;
     private readonly ListReviewsByAlbumHandler _listReviewsByAlbumHandler;
+    private readonly GetReviewByIdHandler _getReviewByIdHandler;
 
     public ReviewsController(
         CreateReviewHandler createReviewHandler,
         UpdateReviewHandler updateReviewHandler,
-        ListReviewsByAlbumHandler listReviewsByAlbumHandler)
+        ListReviewsByAlbumHandler listReviewsByAlbumHandler,
+        GetReviewByIdHandler getReviewByIdHandler)
     {
         ArgumentNullException.ThrowIfNull(createReviewHandler);
         ArgumentNullException.ThrowIfNull(updateReviewHandler);
         ArgumentNullException.ThrowIfNull(listReviewsByAlbumHandler);
+        ArgumentNullException.ThrowIfNull(getReviewByIdHandler);
 
         _createReviewHandler = createReviewHandler;
         _updateReviewHandler = updateReviewHandler;
         _listReviewsByAlbumHandler = listReviewsByAlbumHandler;
+        _getReviewByIdHandler = getReviewByIdHandler;
     }
 
     [HttpPost]
@@ -50,8 +55,13 @@ public sealed class ReviewsController : ControllerBase
 
             CreateReviewStatus.AlreadyReviewed => Conflict(),
 
-            CreateReviewStatus.Created => Created(
-                $"/api/albums/{albumId}/reviews/{result.Review!.Id}",
+            CreateReviewStatus.Created => CreatedAtAction(
+                nameof(GetById),
+                new
+                {
+                    albumId,
+                    reviewId = result.Review!.Id
+                },
                 new CreateReviewResponse(
                     result.Review.Id,
                     result.Review.AlbumId,
@@ -133,6 +143,35 @@ public sealed class ReviewsController : ControllerBase
 
             _ => throw new InvalidOperationException(
                 $"Unexpected list reviews by album status: {result.Status}.")
+        };
+    }
+    
+    [HttpGet("{reviewId:guid}")]
+    public async Task<IActionResult> GetById(
+        Guid albumId,
+        Guid reviewId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _getReviewByIdHandler.HandleAsync(
+            new GetReviewByIdQuery(albumId, reviewId),
+            cancellationToken);
+
+        return result.Status switch
+        {
+            GetReviewByIdStatus.ReviewNotFound => NotFound(),
+
+            GetReviewByIdStatus.Found => Ok(
+                new ReviewResponseItem(
+                    result.Review!.Id,
+                    result.Review.AlbumId,
+                    result.Review.UserId,
+                    result.Review.Rating,
+                    result.Review.Text,
+                    result.Review.CreatedAt,
+                    result.Review.UpdatedAt)),
+
+            _ => throw new InvalidOperationException(
+                $"Unexpected get review by id status: {result.Status}.")
         };
     }
 }
