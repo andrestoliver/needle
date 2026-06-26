@@ -222,6 +222,20 @@ public sealed class CreateReviewHandlerTests
 
             return Task.FromResult(isSameAlbumAndUser ? ExistingReview : null);
         }
+        
+        public Task<Review?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task UpdateAsync(
+            Review review,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
     }
 
     private sealed class FakeClock(DateTimeOffset utcNow) : IClock

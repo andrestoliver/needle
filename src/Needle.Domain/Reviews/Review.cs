@@ -30,14 +30,7 @@ public class Review
             throw new ArgumentException("Rating is required.", nameof(rating));
         }
 
-        var normalizedText = string.IsNullOrWhiteSpace(text)
-            ? null
-            : text.Trim();
-        
-        if (normalizedText is not null && normalizedText.Length > 2000)
-        {
-            throw new ArgumentException("Text cannot be longer than 2000 characters.", nameof(text));
-        }
+        var normalizedText = NormalizeText(text);
 
         if (createdAt == default)
         {
@@ -69,11 +62,49 @@ public class Review
             createdAt);
     }
     
+    public void Update(
+        Rating rating,
+        string? text,
+        DateTimeOffset updatedAt)
+    {
+        if (rating.Value == 0)
+        {
+            throw new ArgumentException("Rating is required.", nameof(rating));
+        }
+
+        var normalizedText = NormalizeText(text);
+
+        if (updatedAt == default)
+        {
+            throw new ArgumentException("UpdatedAt cannot be default.", nameof(updatedAt));
+        }
+
+        Rating = rating;
+        Text = normalizedText;
+        UpdatedAt = updatedAt;
+    }
+    
+    private static string? NormalizeText(string? text)
+    {
+        var normalizedText = string.IsNullOrWhiteSpace(text)
+            ? null
+            : text.Trim();
+
+        if (normalizedText is not null && normalizedText.Length > 2000)
+        {
+            throw new ArgumentException(
+                "Text cannot be longer than 2000 characters.",
+                nameof(text));
+        }
+
+        return normalizedText;
+    }
+    
     public Guid Id { get; }
     public Guid AlbumId { get; }
     public Guid UserId { get; }
-    public Rating Rating { get; }
-    public string? Text { get; }
+    public Rating Rating { get; private set; }
+    public string? Text { get; private set; }
     public DateTimeOffset CreatedAt { get; }
-    public DateTimeOffset? UpdatedAt { get; }
+    public DateTimeOffset? UpdatedAt { get; private set; }
 }
