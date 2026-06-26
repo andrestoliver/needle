@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: needle-postgres
+    environment:
+      POSTGRES_DB: needle
+      POSTGRES_USER: needle
+      POSTGRES_PASSWORD: needle
+    ports:
+      - "5432:5432"
+    volumes:
+      - needle-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U needle -d needle"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: needle-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__NeedleDatabase: Host=postgres;Port=5432;Database=needle;Username=needle;Password=needle
+      Jwt__Issuer: Needle
+      Jwt__Audience: Needle.Api
+      Jwt__SigningKey: needle-development-signing-key-only-for-local-study
+      Jwt__ExpiresInMinutes: 60
+    ports:
+      - "5195:8080"
+
+volumes:
+  needle-postgres-data:
