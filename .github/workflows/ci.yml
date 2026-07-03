@@ -48,3 +48,6 @@ jobs:
 
       - name: Test
         run: dotnet test Needle.sln --configuration Release --no-build
+
+      - name: Build API Docker image
+        run: docker build --file Dockerfile --tag needle-api:ci .
