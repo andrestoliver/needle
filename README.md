@@ -134,3 +134,65 @@ Clean Architecture, com dependências apontando de fora para dentro:
 Needle.Api -> Needle.Infrastructure -> Needle.Application -> Needle.Domain
 Needle.Api ---------------------------> Needle.Application
 Needle.Infrastructure ----------------> Needle.Domain
+```
+
+## Docker
+
+O projeto pode ser executado localmente com Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+Esse comando sobe:
+
+- `api`: aplicação ASP.NET Core;
+- `postgres`: banco PostgreSQL usado pela API.
+
+A API fica disponível em:
+
+```text
+http://localhost:5195
+```
+
+Para acompanhar logs:
+
+```bash
+docker compose logs -f api
+```
+
+Para parar os containers:
+
+```bash
+docker compose down
+```
+
+Os dados do PostgreSQL ficam preservados no volume `needle-postgres-data`.
+Para remover containers, rede e volume:
+
+```bash
+docker compose down -v
+```
+
+## Imagem Docker publicada
+
+A cada merge na `main`, o GitHub Actions publica uma imagem da API no GitHub
+Container Registry:
+
+```text
+ghcr.io/andrestoliver/needle-api
+```
+
+Tags publicadas:
+
+- `latest`: última versão publicada a partir da `main`;
+- `<commit-sha>`: versão imutável associada a um commit específico.
+
+Exemplo:
+
+```bash
+docker pull ghcr.io/andrestoliver/needle-api:latest
+```
+
+A imagem publicada contém apenas a API. Para executar corretamente, ela ainda
+precisa receber configurações como connection string do PostgreSQL e JWT.
