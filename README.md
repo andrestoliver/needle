@@ -147,7 +147,10 @@ docker compose up -d --build
 Esse comando sobe:
 
 - `api`: aplicação ASP.NET Core;
-- `postgres`: banco PostgreSQL usado pela API.
+- `postgres`: banco PostgreSQL usado pela API;
+- `jaeger`: visualização local de traces;
+- `prometheus`: coleta local de métricas;
+- `grafana`: dashboards locais de métricas.
 
 A API fica disponível em:
 
@@ -269,7 +272,8 @@ atender requisições de negócio.
 A API usa OpenTelemetry para gerar traces de requisições HTTP recebidas e
 chamadas HTTP externas.
 
-Os traces são enviados via OTLP para o Jaeger.
+Os traces são enviados via OTLP para o Jaeger quando o endpoint OTLP está
+configurado.
 
 Fluxo local:
 
@@ -337,7 +341,19 @@ Ela indica se os targets monitorados estão disponíveis.
 
 ### Grafana
 
-O Grafana usa o Prometheus como datasource.
+O Grafana usa o Prometheus como datasource e já sobe com provisioning local.
+
+O datasource é configurado em:
+
+```text
+observability/grafana/provisioning/datasources/prometheus.yml
+```
+
+O dashboard inicial da API é configurado em:
+
+```text
+observability/grafana/provisioning/dashboards/needle-api.json
+```
 
 URL do datasource dentro do Docker Compose:
 
