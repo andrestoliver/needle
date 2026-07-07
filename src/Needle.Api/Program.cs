@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Needle.Application;
 using Needle.Infrastructure;
 using Needle.Infrastructure.Persistence;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -74,7 +75,14 @@ builder.Services
         tracing
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
-            .AddConsoleExporter();
+            .AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri(
+                    builder.Configuration["OpenTelemetry:OtlpEndpoint"]
+                    ?? "http://localhost:4317");
+
+                options.Protocol = OtlpExportProtocol.Grpc;
+            });
     });
 
 var app = builder.Build();
