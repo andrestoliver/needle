@@ -64,6 +64,8 @@ builder.Services
         "postgres",
         tags: ["ready"]);
 
+var otlpEndpoint = builder.Configuration["OpenTelemetry:OtlpEndpoint"];
+
 builder.Services
     .AddOpenTelemetry()
     .ConfigureResource(resource =>
@@ -75,15 +77,16 @@ builder.Services
     {
         tracing
             .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
-            .AddOtlpExporter(options =>
-            {
-                options.Endpoint = new Uri(
-                    builder.Configuration["OpenTelemetry:OtlpEndpoint"]
-                    ?? "http://localhost:4317");
+            .AddHttpClientInstrumentation();
 
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            tracing.AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri(otlpEndpoint);
                 options.Protocol = OtlpExportProtocol.Grpc;
             });
+        }
     });
 
 var app = builder.Build();
