@@ -196,3 +196,155 @@ docker pull ghcr.io/andrestoliver/needle-api:latest
 
 A imagem publicada contém apenas a API. Para executar corretamente, ela ainda
 precisa receber configurações como connection string do PostgreSQL e JWT.
+
+## Observabilidade
+
+O Needle possui uma stack local de observabilidade para estudo e validação do
+comportamento da API em ambiente containerizado.
+
+A stack atual inclui:
+
+- logs estruturados em JSON;
+- health checks;
+- tracing distribuído com OpenTelemetry e Jaeger;
+- métricas com Prometheus;
+- dashboards com Grafana.
+
+### Endpoints e ferramentas
+
+| Ferramenta | URL | Uso |
+| --- | --- | --- |
+| API | `http://localhost:5195` | Endpoints HTTP da aplicação |
+| Health live | `http://localhost:5195/health/live` | Verifica se o processo da API está vivo |
+| Health ready | `http://localhost:5195/health/ready` | Verifica se a API está pronta e consegue acessar dependências como PostgreSQL |
+| Metrics | `http://localhost:5195/metrics` | Endpoint coletado pelo Prometheus |
+| Jaeger | `http://localhost:16686` | Visualização de traces distribuídos |
+| Prometheus | `http://localhost:9090` | Consulta e coleta de métricas |
+| Grafana | `http://localhost:3000` | Dashboards de métricas |
+
+Credenciais locais do Grafana:
+
+```text
+user: admin
+password: admin
+```
+
+### Logs
+
+A API escreve logs estruturados em JSON no console. Em Docker, os logs podem ser
+consultados com:
+
+```bash
+docker compose logs -f api
+```
+
+Logs ajudam a responder:
+
+```text
+O que aconteceu?
+Qual erro foi registrado?
+Quais eventos ocorreram durante a execução?
+```
+
+### Health checks
+
+A API expõe dois health checks:
+
+```text
+/health/live
+/health/ready
+```
+
+`/health/live` indica se o processo da API está vivo. Ele não depende de banco
+ou serviços externos.
+
+`/health/ready` indica se a API está pronta para receber tráfego real. Ele inclui
+a checagem do PostgreSQL.
+
+Essa separação evita confundir uma aplicação viva com uma aplicação pronta para
+atender requisições de negócio.
+
+### Tracing
+
+A API usa OpenTelemetry para gerar traces de requisições HTTP recebidas e
+chamadas HTTP externas.
+
+Os traces são enviados via OTLP para o Jaeger.
+
+Fluxo local:
+
+```text
+Needle.Api -> OTLP -> Jaeger
+```
+
+No Jaeger, selecione o serviço:
+
+```text
+Needle.Api
+```
+
+Um trace permite enxergar a linha do tempo de uma requisição, por exemplo:
+
+```text
+GET /api/catalog/albums
+└── HTTP GET musicbrainz.org
+```
+
+Isso ajuda a responder:
+
+```text
+Por onde essa requisição passou?
+Quanto tempo cada etapa levou?
+A lentidão está na API ou em uma dependência externa?
+```
+
+### Métricas
+
+A API expõe métricas no endpoint:
+
+```text
+/metrics
+```
+
+O Prometheus coleta esse endpoint periodicamente usando a configuração em:
+
+```text
+observability/prometheus/prometheus.yml
+```
+
+Fluxo local:
+
+```text
+Needle.Api -> /metrics -> Prometheus -> Grafana
+```
+
+Métricas ajudam a responder:
+
+```text
+Quantas requisições a API recebeu?
+Qual a taxa de erro?
+Como a latência se comporta ao longo do tempo?
+O serviço está disponível?
+```
+
+No Prometheus ou Grafana, uma query inicial útil é:
+
+```promql
+up
+```
+
+Ela indica se os targets monitorados estão disponíveis.
+
+### Grafana
+
+O Grafana usa o Prometheus como datasource.
+
+URL do datasource dentro do Docker Compose:
+
+```text
+http://prometheus:9090
+```
+
+Usamos `prometheus` em vez de `localhost` porque o Grafana roda dentro de um
+container. Dentro da rede do Docker Compose, serviços se comunicam pelo nome do
+serviço.
