@@ -6,6 +6,8 @@ using Microsoft.IdentityModel.Tokens;
 using Needle.Application;
 using Needle.Infrastructure;
 using Needle.Infrastructure.Persistence;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +61,21 @@ builder.Services
     .AddDbContextCheck<NeedleDbContext>(
         "postgres",
         tags: ["ready"]);
+
+builder.Services
+    .AddOpenTelemetry()
+    .ConfigureResource(resource =>
+    {
+        resource.AddService(
+            serviceName: "Needle.Api");
+    })
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddConsoleExporter();
+    });
 
 var app = builder.Build();
 
