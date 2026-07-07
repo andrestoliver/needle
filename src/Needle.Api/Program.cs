@@ -9,6 +9,7 @@ using Needle.Infrastructure.Persistence;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -101,6 +102,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseHttpMetrics();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -117,6 +120,8 @@ app.MapHealthChecks(
     {
         Predicate = check => check.Tags.Contains("ready")
     });
+
+app.MapMetrics();
 
 app.MapControllers();
 
