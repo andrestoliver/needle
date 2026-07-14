@@ -15,7 +15,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-      
+
   jaeger:
     image: jaegertracing/all-in-one:1.72.0
     container_name: needle-jaeger
@@ -24,7 +24,7 @@ services:
     ports:
       - "16686:16686"
       - "4317:4317"
-    
+
   prometheus:
     image: prom/prometheus:v3.7.3
     container_name: needle-prometheus
@@ -34,7 +34,7 @@ services:
       - "9090:9090"
     depends_on:
       - api
-    
+
   grafana:
     image: grafana/grafana:12.3.0
     container_name: needle-grafana
