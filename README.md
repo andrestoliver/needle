@@ -364,3 +364,25 @@ http://prometheus:9090
 Usamos `prometheus` em vez de `localhost` porque o Grafana roda dentro de um
 container. Dentro da rede do Docker Compose, serviços se comunicam pelo nome do
 serviço.
+
+## Segurança e configuração local
+
+Este repositório contém configurações pensadas para estudo local e não para uso
+direto em produção.
+
+Valores como senha do PostgreSQL, credenciais locais do Grafana e chave de
+assinatura JWT aparecem no `docker-compose.yml` e no
+`appsettings.Development.json` para simplificar a execução da POC.
+
+Esses valores são deliberadamente locais. Em um ambiente real, eles deveriam ser
+fornecidos pelo ambiente de deploy, por variáveis de ambiente protegidas ou por
+um secret manager, como AWS Secrets Manager, Azure Key Vault, Google Secret
+Manager, Vault ou ferramenta equivalente.
+
+O endpoint `POST /api/auth/dev-token` também é temporário e existe apenas para
+testes locais. Em produção, tokens JWT devem ser emitidos por um provedor de
+identidade confiável, e a API deve apenas validar assinatura, issuer, audience,
+expiração e permissões.
+
+A imagem Docker publicada no GitHub Container Registry não deve conter secrets.
+Configurações sensíveis precisam ser injetadas em runtime.
