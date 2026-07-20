@@ -16,26 +16,42 @@ function App() {
                 <h2 id="next-steps-title">Primeiros fluxos</h2>
 
                 <div className="cards">
-                    <article className="card">
-                        <span>01</span>
-                        <h3>Pesquisar álbuns</h3>
-                        <p>Encontrar álbuns no catálogo externo do MusicBrainz.</p>
-                    </article>
+                    <FeatureCard
+                        number="01"
+                        title="Pesquisar álbuns"
+                        description="Encontrar álbuns no catálogo externo do MusicBrainz."
+                    />
 
-                    <article className="card">
-                        <span>02</span>
-                        <h3>Importar favoritos</h3>
-                        <p>Trazer álbuns escolhidos para o catálogo local do Needle.</p>
-                    </article>
+                    <FeatureCard
+                        number="02"
+                        title="Importar favoritos"
+                        description="Trazer álbuns escolhidos para o catálogo local do Needle."
+                    />
 
-                    <article className="card">
-                        <span>03</span>
-                        <h3>Registrar reviews</h3>
-                        <p>Avaliar álbuns e acompanhar suas impressões musicais.</p>
-                    </article>
+                    <FeatureCard
+                        number="03"
+                        title="Registrar reviews"
+                        description="Avaliar álbuns e acompanhar suas impressões musicais."
+                    />
                 </div>
             </section>
         </main>
+    );
+}
+
+type FeatureCardProps = {
+    number: string;
+    title: string;
+    description: string;
+};
+
+function FeatureCard({ number, title, description }: FeatureCardProps) {
+    return (
+        <article className="card">
+            <span>{number}</span>
+            <h3>{title}</h3>
+            <p>{description}</p>
+        </article>
     );
 }
 
