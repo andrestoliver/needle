@@ -1,5 +1,4 @@
-import { FeatureCard } from './components/FeatureCard';
-import { homeFeatures } from './data/homeFeatures';
+import { HomeFeaturesSection } from './components/HomeFeaturesSection';
 import './App.css';
 
 function App() {
@@ -14,23 +13,11 @@ function App() {
                 </p>
             </section>
 
-            <section className="next-steps" aria-labelledby="next-steps-title">
-                <h2 id="next-steps-title">Primeiros fluxos</h2>
-
-                <div className="cards">
-                    {homeFeatures.map((feature) => (
-                        <FeatureCard
-                            key={feature.number}
-                            number={feature.number}
-                            title={feature.title}
-                            description={feature.description}
-                        />
-                    ))}
-                </div>
-            </section>
+            <HomeFeaturesSection />
         </main>
     );
 }
 
 export default App;
+
 
