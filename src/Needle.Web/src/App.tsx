@@ -1,3 +1,4 @@
+import { FeatureCard } from './components/FeatureCard';
 import './App.css';
 
 const features = [
@@ -48,20 +49,5 @@ function App() {
     );
 }
 
-type FeatureCardProps = {
-    number: string;
-    title: string;
-    description: string;
-};
-
-function FeatureCard({ number, title, description }: FeatureCardProps) {
-    return (
-        <article className="card">
-            <span>{number}</span>
-            <h3>{title}</h3>
-            <p>{description}</p>
-        </article>
-    );
-}
-
 export default App;
+
