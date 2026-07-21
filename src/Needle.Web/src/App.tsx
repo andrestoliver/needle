@@ -1,23 +1,6 @@
 import { FeatureCard } from './components/FeatureCard';
+import { homeFeatures } from './data/homeFeatures';
 import './App.css';
-
-const features = [
-    {
-        number: '01',
-        title: 'Pesquisar álbuns',
-        description: 'Encontrar álbuns no catálogo externo do MusicBrainz.',
-    },
-    {
-        number: '02',
-        title: 'Importar favoritos',
-        description: 'Trazer álbuns escolhidos para o catálogo local do Needle.',
-    },
-    {
-        number: '03',
-        title: 'Registrar reviews',
-        description: 'Avaliar álbuns e acompanhar suas impressões musicais.',
-    },
-];
 
 function App() {
     return (
@@ -35,7 +18,7 @@ function App() {
                 <h2 id="next-steps-title">Primeiros fluxos</h2>
 
                 <div className="cards">
-                    {features.map(feature => (
+                    {homeFeatures.map((feature) => (
                         <FeatureCard
                             key={feature.number}
                             number={feature.number}
